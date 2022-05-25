@@ -1,7 +1,7 @@
 # ------------------ IMPORTS ------------------ #
 from collections import Counter  # Counting frequencies
 from itertools import chain  # Flattening 2D arrays
-import numpy as np
+import numpy as np  # Creation of matrices
 
 
 # ---------------- FUNCTIONS ----------------- #
@@ -13,7 +13,7 @@ def reducer(lst):  # Count all pairs
     return list(Counter(lst).items())
 
 
-def chopper(lst, n):
+def chopper(lst, n):  # Chop text or list into n parts
     chops = int(len(lst) / n)
     for i in range(0, len(lst), chops):
         yield lst[i:i + chops]
@@ -39,7 +39,10 @@ def create_matrix(lan_dict, text):
             except:
                 pass
 
-    return np.divide(matrix, sum(sum(matrix)))  # Normalization
+    # NOTE: The following line may give a RuntimeWarning, but the cause if this is division by zero. (invalid value)
+    result = np.divide(matrix, sum(sum(matrix)))  # Normalization
+
+    return result
 
 
 def define_language_of_sentences(lan_dict, book, eng_book_matrix, nl_book_matrix):
@@ -75,7 +78,7 @@ def main():
     with open("sentences.nl-en.txt", "r") as file:
         validation_book = file.readlines()
 
-    lan_dict = {
+    language_dict = {
         "a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7, "i": 8, "j": 9,
         "k": 10, "l": 11, "m": 12, "n": 13, "o": 14, "p": 15, "q": 16, "r": 17, "s": 18,
         "t": 19, "u": 20, "v": 21, "w": 22, "x": 23, "y": 24, "z": 25, " ": 26, "0": 27,
@@ -84,14 +87,13 @@ def main():
         "?": 28, "!": 28, "(": 28, ")": 28
     }
 
-    eng_book_matrix = create_matrix(lan_dict, eng_book)
-    nl_book_matrix = create_matrix(lan_dict, nl_book)
+    eng_book_matrix = create_matrix(language_dict, eng_book)
+    nl_book_matrix = create_matrix(language_dict, nl_book)
 
-    result = define_language_of_sentences(lan_dict, validation_book, eng_book_matrix, nl_book_matrix)
-    print(result)
+    result = define_language_of_sentences(language_dict, validation_book, eng_book_matrix, nl_book_matrix)
+    print(f"Number of lines: {result[0]} NL | {result[1]} ENG")
 
     return result
-
 
 # ---------------- EXECUTION ----------------- #
 main()
