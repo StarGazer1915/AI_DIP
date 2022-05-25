@@ -13,37 +13,50 @@ def reducer(lst):  # Count all pairs
     return list(Counter(lst).items())
 
 
-def create_sentence_matrix(lan_dict, sentence):
+def chopper(lst, n):
+    chops = int(len(lst) / n)
+    for i in range(0, len(lst), chops):
+        yield lst[i:i + chops]
+
+
+def create_matrix(lan_dict, text):
     matrix = np.zeros((max(lan_dict.values()) + 1, (max(lan_dict.values()) + 1)), dtype=int)
-    senmap = list(map(lambda pair: ''.join(pair).lower(), zip(sentence, sentence[1:])))  # Apply mapper
-    for freq in reducer(senmap):  # For each frequency in result from reducer
-        try:
-            matrix[lan_dict[freq[0][0]]][lan_dict[freq[0][1]]] += freq[1]  # Add frequency to matrix
-        except:
-            pass
 
-    return matrix
+    if type(text) == list:
+        chops = chopper(text, 4)
+        for chop in chops:
+            map_result = list(chain.from_iterable(map(mapper, chop)))
+            for freq in reducer(map_result):  # For each frequency in result from reducer
+                try:
+                    matrix[lan_dict[freq[0][0]]][lan_dict[freq[0][1]]] += freq[1]  # Add frequency to matrix
+                except:
+                    pass
+    else:
+        senmap = list(map(lambda pair: ''.join(pair).lower(), zip(text, text[1:])))  # Apply mapper
+        for freq in reducer(senmap):  # For each frequency in result from reducer
+            try:
+                matrix[lan_dict[freq[0][0]]][lan_dict[freq[0][1]]] += freq[1]  # Add frequency to matrix
+            except:
+                pass
+
+    return np.divide(matrix, sum(sum(matrix)))  # Normalization
 
 
-def create_book_matrix(lan_dict, book):
-    matrix = np.zeros((max(lan_dict.values()) + 1, (max(lan_dict.values()) + 1)), dtype=int)
-    flatmap = list(chain.from_iterable(list(map(mapper, book))))  # Apply mapper and flatten 2D list
-    for freq in reducer(flatmap):  # For each frequency in result from reducer
-        try:
-            matrix[lan_dict[freq[0][0]]][lan_dict[freq[0][1]]] += freq[1]  # Add frequency to matrix
-        except:
-            pass
-
-    return matrix
-
-
-def define_language_of_sentences(book, eng_book_matrix, nl_book_matrix):
+def define_language_of_sentences(lan_dict, book, eng_book_matrix, nl_book_matrix):
     nl_sen_num, eng_sen_num = 0, 0
     for sentence in book:
-        create_sentence_matrix
+        senmat = create_matrix(lan_dict, sentence)
+        eng = sum(sum(np.multiply(senmat, eng_book_matrix)))
+        nl = sum(sum(np.multiply(senmat, nl_book_matrix)))
 
+        if eng > nl:
+            eng_sen_num += 1
+        elif nl > eng:
+            nl_sen_num += 1
+        else:
+            pass
 
-    return #[nl_sen_num, eng_sen_num]
+    return [nl_sen_num, eng_sen_num]
 
 
 def main():
@@ -53,11 +66,14 @@ def main():
     with open("dutch_book.txt", "r") as file:
         nl_book = file.readlines()
 
-    with open("test_book_eng.txt", "r") as file:
+    with open("english_book_test.txt", "r") as file:
         test_eng_book = file.readlines()
-    
-    with open("test_book_nl.txt", "r") as file:
+
+    with open("dutch_book_test.txt", "r") as file:
         test_nl_book = file.readlines()
+
+    with open("sentences.nl-en.txt", "r") as file:
+        validation_book = file.readlines()
 
     lan_dict = {
         "a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7, "i": 8, "j": 9,
@@ -68,12 +84,13 @@ def main():
         "?": 28, "!": 28, "(": 28, ")": 28
     }
 
-    eng_book_matrix = create_book_matrix(lan_dict, eng_book)
-    nl_book_matrix = create_book_matrix(lan_dict, nl_book)
+    eng_book_matrix = create_matrix(lan_dict, eng_book)
+    nl_book_matrix = create_matrix(lan_dict, nl_book)
 
-    print(define_language_of_sentences(bookie, eng_book_matrix, nl_book_matrix))
+    result = define_language_of_sentences(lan_dict, validation_book, eng_book_matrix, nl_book_matrix)
+    print(result)
 
-    return eng_book_matrix
+    return result
 
 
 # ---------------- EXECUTION ----------------- #
