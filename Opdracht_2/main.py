@@ -88,8 +88,10 @@ def define_language_of_sentences(lan_dict, book, eng_book_matrix, nl_book_matrix
         nl = sum(sum(np.multiply(senmat, nl_book_matrix)))
 
         if eng > nl:
+            # print(f"ENG: {sentence}")
             eng_sen_num += 1
         elif nl > eng:
+            # print(f"NL: {sentence}")
             nl_sen_num += 1
         else:
             pass
