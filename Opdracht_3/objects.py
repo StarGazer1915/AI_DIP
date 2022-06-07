@@ -1,20 +1,15 @@
 
-class Proposer:
-    def __init__(self, id):
+class Computer:
+    def __init__(self, id, type):
         self.id = id
+        self.type = type
         self.failed = False
 
-    def __str__(self):
-        return f"Proposer: {self.id}"
-
-
-class Acceptor:
-    def __init__(self, id):
-        self.id = id
-        self.failed = False
+    def deliver_message(self, c, message):
+        return
 
     def __str__(self):
-        return f"Acceptor: {self.id}"
+        return f"Computer | ID: {self.id} | Type: {self.type} | Failed: {self.failed}"
 
 
 class Message:
@@ -23,7 +18,7 @@ class Message:
         self.dst = mdst
         self.type = mtype
 
-        # TYPES:
+        # MESSAGE TYPES:
         # - PROPOSE
         # - PREPARE
         # - PROMISE
@@ -36,11 +31,21 @@ class Message:
 
 
 class Network:
-    def __init__(self, id, proposers, acceptors):
+    def __init__(self, id):
         self.id = id
-        self.prop = proposers
-        self.accept = acceptors
-        self.failed = False
+        self.queue = []
+
+    def queue_message(self, message):
+        self.queue.append(message)
+        return self.queue
+
+    def extract_message(self):
+        message = self.queue[0]
+        if not message.src.failed and not message.dst.failed:
+            self.queue.pop(0)
+            return message
+        else:
+            return None
 
     def __str__(self):
         return f"Acceptor: {self.id}"
