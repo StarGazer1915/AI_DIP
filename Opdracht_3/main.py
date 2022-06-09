@@ -23,9 +23,6 @@ def simulate(n_p, n_a, tmax, coms):
         if com[0] != t:
             com = None
 
-        # print(f"\nTICK: {t}")
-        # print(f"\n{N}")
-
         if com:
             e = com
             if "END" in com:
@@ -47,7 +44,7 @@ def simulate(n_p, n_a, tmax, coms):
             for c in R:
                 c.failed = False
 
-            if pi_v and pi_c:  # PROPOSE
+            if pi_v and pi_c:
                 num_prop += 1
                 pi_c.p_id = num_prop
                 N.queue_message(Message(None, pi_c, "PROPOSE", pi_v))
@@ -60,9 +57,9 @@ def simulate(n_p, n_a, tmax, coms):
     print("")
     for p in P:
         if tmp.count(p.value) >= round(len(tmp) / 2):
-            print(f"{p.id} heeft wel consensus (voorgesteld: {p.value}, geaccepteerd: {A[0].value})")
+            print(f"{p.id} heeft wel consensus (voorgesteld: {p.org_value}, geaccepteerd: {A[0].value})")
         else:
-            print(f"{p.id} heeft geen consensus (voorgesteld: {p.value}, geaccepteerd: {A[0].value})")
+            print(f"{p.id} heeft geen consensus (voorgesteld: {p.org_value}, geaccepteerd: {A[0].value})")
 
     return
 
@@ -78,10 +75,9 @@ commands2 = [
     [8, "FAIL PROPOSER", 1],
     [11, "PROPOSE", 2, 37],
     [26, "RECOVER PROPOSER", 1],
-    [30, "PROPOSE", 1, 42],
+    [31, "PROPOSE", 1, 42],
     [0, "END"]
 ]
 
 # simulate(1, 3, 15, commands1)
-
 simulate(2, 3, 50, commands2)

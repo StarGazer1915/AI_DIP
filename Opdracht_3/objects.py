@@ -5,7 +5,8 @@ class Computer:
         self.type = type
         self.failed = False
         self.value = None
-        self.p_id = 1
+        self.org_value = None
+        self.p_id = None
         self.N = N
         self.A = A
         self.prior = None
@@ -15,6 +16,7 @@ class Computer:
         if m.type == "PROPOSE" and m.dst.type == "PROPOSER":
             print(f"{tick}:    -> {m.dst.id} | {m.type} v={m.value}")
             m.dst.value = m.value
+            m.dst.org_value = m.value
 
             for a_c in self.A:
                 self.N.queue_message(Message(m.dst, a_c, "PREPARE", m.value))
@@ -23,21 +25,21 @@ class Computer:
         elif m.type == "PREPARE" and m.dst.type == "ACCEPTOR":
             if m.dst.p_id >= m.src.p_id:
                 print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.p_id}")
-                
                 self.N.queue_message(Message(m.dst, m.src, "PROMISE", m.value))
             else:
                 print("Acceptor ignored proposal, proposer_id was too small")
 
         elif m.type == "PROMISE" and m.dst.type == "PROPOSER":
-            m.src.value = None
+            if m.src.prior:
+                m.dst.value = m.src.prior[1]
             print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.p_id} | Prior: {m.src.prior}")
             self.N.queue_message(Message(m.dst, m.src, "ACCEPT", m.value))
 
         elif m.type == "ACCEPT" and m.dst.type == "ACCEPTOR":
-            m.dst.prior = [m.src.p_id, m.src.value]
             print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.p_id} v={m.src.value}")
-            if not m.dst.value:
+            if not m.dst.value or m.dst.value == m.src.value and m.src.p_id >= m.dst.p_id:
                 self.N.queue_message(Message(m.dst, m.src, "ACCEPTED", m.value))
+                m.dst.prior = [m.src.p_id, m.src.value]
             else:
                 self.N.queue_message(Message(m.dst, m.src, "REJECTED", m.value))
 
@@ -54,7 +56,7 @@ class Computer:
         return
 
     def __str__(self):
-        return f"Computer | ID: {self.id} | Type: {self.type} | Failed: {self.failed} | Value: {self.value}"
+        return f"Computer | ID: {self.id} | Type: {self.type} | Prop_id: {self.p_id} | Failed: {self.failed} | Value: {self.value}"
 
 
 class Message:
@@ -72,10 +74,6 @@ class Network:
     def __init__(self, id):
         self.id = id
         self.queue = []
-
-    def insert_message(self, message):
-        self.queue.insert(0, message)
-        return self.queue
 
     def queue_message(self, message):
         self.queue.append(message)
