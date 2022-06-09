@@ -6,8 +6,8 @@ class Computer:
         self.failed = False
         self.value = None
         self.p_id = 1
-        self.network = N
-        self.acceptors = A
+        self.N = N
+        self.A = A
         self.prior = None
 
     def deliver_message(self, m, tick):
@@ -15,31 +15,38 @@ class Computer:
         if m.type == "PROPOSE" and m.dst.type == "PROPOSER":
             print(f"{tick}:    -> {m.dst.id} | {m.type} v={m.value}")
             m.dst.value = m.value
-            m.dst.p_id = m.dst.id[1]
 
-            for a_c in self.acceptors:
-                self.network.queue_message(Message(m.dst, a_c, "PREPARE", m.value))
-                a_c.p_id = m.dst.id[1]
+            for a_c in self.A:
+                self.N.queue_message(Message(m.dst, a_c, "PREPARE", m.value))
+                a_c.p_id = m.dst.p_id
 
         elif m.type == "PREPARE" and m.dst.type == "ACCEPTOR":
-            if m.dst.p_id >= m.src.id[1]:
-                print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.id[1]}")
-
-                self.network.queue_message(Message(m.dst, m.src, "PROMISE", m.value))
+            if m.dst.p_id >= m.src.p_id:
+                print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.p_id}")
+                
+                self.N.queue_message(Message(m.dst, m.src, "PROMISE", m.value))
             else:
                 print("Acceptor ignored proposal, proposer_id was too small")
 
         elif m.type == "PROMISE" and m.dst.type == "PROPOSER":
-            print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.dst.id[1]} | Prior: {self.prior}")
-            self.network.queue_message(Message(m.dst, m.src, "ACCEPT", m.value))
+            m.src.value = None
+            print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.p_id} | Prior: {m.src.prior}")
+            self.N.queue_message(Message(m.dst, m.src, "ACCEPT", m.value))
 
         elif m.type == "ACCEPT" and m.dst.type == "ACCEPTOR":
-            print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.id[1]} v={m.src.value}")
-            self.network.queue_message(Message(m.dst, m.src, "ACCEPTED", m.value))
+            m.dst.prior = [m.src.p_id, m.src.value]
+            print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.p_id} v={m.src.value}")
+            if not m.dst.value:
+                self.N.queue_message(Message(m.dst, m.src, "ACCEPTED", m.value))
+            else:
+                self.N.queue_message(Message(m.dst, m.src, "REJECTED", m.value))
+
+        elif m.type == "REJECTED" and m.dst.type == "PROPOSER":
+            print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.dst.p_id}")
 
         elif m.type == "ACCEPTED" and m.dst.type == "PROPOSER":
             m.src.value = m.dst.value
-            print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.dst.id[1]} v={m.src.value}")
+            print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.dst.p_id} v={m.src.value}")
 
         else:
             raise RuntimeError(f"Error, combination of {m.type} and {m.dst.type} does not match")
@@ -58,7 +65,7 @@ class Message:
         self.value = value
 
     def __str__(self):
-        return f"Message: {self.src}, {self.dst}, {self.type}, {self.value}"
+        return f"Message: {self.src.id}, {self.dst.id}, {self.type}, {self.value}"
 
 
 class Network:
@@ -66,21 +73,27 @@ class Network:
         self.id = id
         self.queue = []
 
+    def insert_message(self, message):
+        self.queue.insert(0, message)
+        return self.queue
+
     def queue_message(self, message):
         self.queue.append(message)
         return self.queue
 
-    def extract_message(self):
-        try:
-            message = self.queue[0]
-        except:
+    def extract_message(self, t):
+        if not self.queue:
             return None
 
-        if message.src is None or not message.src.failed and not message.dst.failed:
-            self.queue.pop(0)
-            return message
-        else:
-            return None
+        count = 0
+        for i in self.queue:
+            if not i.src or not i.src.failed and not i.dst.failed:
+                self.queue.pop(count)
+                return i
+            count += 1
+
+        print(f"{str(t).zfill(3)}: ")
+        return None
 
     def __str__(self):
         print(f"Network: {self.id}")
