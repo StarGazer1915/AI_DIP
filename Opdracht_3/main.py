@@ -1,23 +1,19 @@
-from objects import Computer, Message, Network, Counter
+from objects import Computer, Message, Network
 
 
 def create_computers(c_num, c_type, N, A):
     tmp = []
-    if c_type == "PROPOSER":
-        
-        pass
-    else:
-        for i in range(1, c_num+1):
-            tmp.append(Computer(f"{c_type[0]}{i}", c_type, N, A))
+    for i in range(1, c_num+1):
+        tmp.append(Computer(f"{c_type[0]}{i}", c_type, N, A))
     return tmp
 
 
 def simulate(n_p, n_a, tmax, coms):
     prop_id = 1
+
     N = Network("N1")
     A = create_computers(n_a, "ACCEPTOR", N, [])
     P = create_computers(n_p, "PROPOSER", N, A)
-
 
     for t in range(tmax):
         if len(N.queue) == 0 and len(coms) == 0:
@@ -36,7 +32,6 @@ def simulate(n_p, n_a, tmax, coms):
             elif "PROPOSE" in com:
                 # Example: [0, "PROPOSE", 1, 42]
                 e = [com[0], [], [], P[com[2] - 1], com[3]]
-                CNTR.value = P[com[2]]
 
             elif "FAIL PROPOSER" in com:
                 # Example: [8, "FAIL PROPOSER", 1]
@@ -55,7 +50,6 @@ def simulate(n_p, n_a, tmax, coms):
 
             if pi_v is not None and pi_c is not None:  # PROPOSE
                 N.queue_message(Message(None, pi_c, "PROPOSE", pi_v))
-                props += 1
         else:
             m = N.extract_message()
             if m is not None:
