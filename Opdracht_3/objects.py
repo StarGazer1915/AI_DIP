@@ -11,8 +11,9 @@ class Computer:
         self.prior = None
 
     def deliver_message(self, m, tick):
+        tick = str(tick).zfill(3)
         if m.type == "PROPOSE" and m.dst.type == "PROPOSER":
-            print(f"00{tick}:    -> {m.dst.id} | {m.type} v={m.value}")
+            print(f"{tick}:    -> {m.dst.id} | {m.type} v={m.value}")
             m.dst.value = m.value
             m.dst.p_id = m.dst.id[1]
 
@@ -22,23 +23,23 @@ class Computer:
 
         elif m.type == "PREPARE" and m.dst.type == "ACCEPTOR":
             if m.dst.p_id >= m.src.id[1]:
-                print(f"00{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.id[1]}")
+                print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.id[1]}")
 
                 self.network.queue_message(Message(m.dst, m.src, "PROMISE", m.value))
             else:
                 print("Acceptor ignored proposal, proposer_id was too small")
 
         elif m.type == "PROMISE" and m.dst.type == "PROPOSER":
-            print(f"00{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.dst.id[1]} | Prior: {self.prior}")
+            print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.dst.id[1]} | Prior: {self.prior}")
             self.network.queue_message(Message(m.dst, m.src, "ACCEPT", m.value))
 
         elif m.type == "ACCEPT" and m.dst.type == "ACCEPTOR":
-            print(f"00{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.id[1]} v={m.src.value}")
+            print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.id[1]} v={m.src.value}")
             self.network.queue_message(Message(m.dst, m.src, "ACCEPTED", m.value))
-            m.dst.value = m.src.value
 
         elif m.type == "ACCEPTED" and m.dst.type == "PROPOSER":
-            print(f"00{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.id[1]} v={m.src.value}")
+            m.src.value = m.dst.value
+            print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.dst.id[1]} v={m.src.value}")
 
         else:
             raise RuntimeError(f"Error, combination of {m.type} and {m.dst.type} does not match")

@@ -52,16 +52,31 @@ def simulate(n_p, n_a, tmax, coms):
                 N.queue_message(Message(None, pi_c, "PROPOSE", pi_v))
         else:
             m = N.extract_message()
-            if m is not None:
+            if m:
                 m.dst.deliver_message(m, t-1)
+
+    tmp = [a.value for a in A]
+    for p in P:
+        if tmp.count(p.value) >= round(len(tmp)/2):
+            print(f"\n{p.id} heeft wel consensus (voorgesteld: {p.value}, geaccepteerd: {A[0].value})")
+        else:
+            print(f"\n{p.id} heeft geen consensus (voorgesteld: {p.value}, geaccepteerd: {A[0].value})")
 
     return
 
 
 # =============== EXECUTION =============== #
-commands = [
+commands1 = [
     [0, "PROPOSE", 1, 42],
     [0, "END"]
 ]
 
-simulate(1, 3, 15, commands)
+commands2 = [
+    [0, "PROPOSE", 1, 42],
+    [8, "FAIL PROPOSER", 1],
+    [11, "PROPOSE", 2, 37],
+    [26, "RECOVER PROPOSER", 1],
+    [0, "END"]
+]
+
+simulate(1, 3, 15, commands1)
