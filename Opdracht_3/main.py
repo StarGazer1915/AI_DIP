@@ -75,7 +75,6 @@ commands2 = [
     [8, "FAIL PROPOSER", 1],
     [11, "PROPOSE", 2, 37],
     [26, "RECOVER PROPOSER", 1],
-    [31, "PROPOSE", 1, 42],
     [0, "END"]
 ]
 

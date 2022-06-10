@@ -1,4 +1,3 @@
-
 class Computer:
     def __init__(self, id, type, N, A):
         self.id = id
@@ -10,6 +9,7 @@ class Computer:
         self.N = N
         self.A = A
         self.prior = None
+        self.rej_count = 0
 
     def deliver_message(self, m, tick):
         tick = str(tick).zfill(3)
@@ -23,7 +23,7 @@ class Computer:
                 a_c.p_id = m.dst.p_id
 
         elif m.type == "PREPARE" and m.dst.type == "ACCEPTOR":
-            if m.dst.p_id >= m.src.p_id:
+            if m.dst.p_id <= m.src.p_id:
                 print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.src.p_id}")
                 self.N.queue_message(Message(m.dst, m.src, "PROMISE", m.value))
             else:
@@ -45,6 +45,12 @@ class Computer:
 
         elif m.type == "REJECTED" and m.dst.type == "PROPOSER":
             print(f"{tick}: {m.src.id} -> {m.dst.id} | {m.type} n={m.dst.p_id}")
+            m.dst.rej_count += 1
+            if m.dst.rej_count >= round(len(m.dst.A)/2):
+                for a_c in m.dst.A:
+                    self.N.queue_message(Message(m.dst, a_c, "PREPARE", m.dst.org_value))
+                    m.dst.p_id = a_c.p_id + 1
+                m.dst.rej_count = 0
 
         elif m.type == "ACCEPTED" and m.dst.type == "PROPOSER":
             m.src.value = m.dst.value
